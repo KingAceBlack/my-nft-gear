@@ -296,6 +296,7 @@
     <script>
         // Contract Configuration
         const CONTRACT_ADDRESS = "0x6F34ae70d52106D6f0Ca39E0C97BD19Ed3671859";
+        const ARBITRUM_SEPOLIA_CHAIN_ID = "0x66eee"; // 421614 in hex
         
         // ABI - Only the functions we need
         const CONTRACT_ABI = [
@@ -330,6 +331,44 @@
                     return;
                 }
 
+                // Check if on correct network
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                
+                if (chainId !== ARBITRUM_SEPOLIA_CHAIN_ID) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: ARBITRUM_SEPOLIA_CHAIN_ID }],
+                        });
+                    } catch (switchError) {
+                        // Chain not added, let's add it
+                        if (switchError.code === 4902) {
+                            try {
+                                await window.ethereum.request({
+                                    method: 'wallet_addEthereumChain',
+                                    params: [{
+                                        chainId: ARBITRUM_SEPOLIA_CHAIN_ID,
+                                        chainName: 'Arbitrum Sepolia',
+                                        nativeCurrency: {
+                                            name: 'ETH',
+                                            symbol: 'ETH',
+                                            decimals: 18
+                                        },
+                                        rpcUrls: ['https://sepolia-rollup.arbitrum.io/rpc'],
+                                        blockExplorerUrls: ['https://sepolia.arbiscan.io/']
+                                    }]
+                                });
+                            } catch (addError) {
+                                showStatus('mintStatus', 'Failed to add Arbitrum Sepolia network', 'error');
+                                return;
+                            }
+                        } else {
+                            showStatus('mintStatus', 'Please switch to Arbitrum Sepolia network', 'error');
+                            return;
+                        }
+                    }
+                }
+
                 // Request account access
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 userAddress = accounts[0];
@@ -344,13 +383,18 @@
                 document.getElementById('connectBtn').disabled = true;
                 document.getElementById('mintBtn').disabled = false;
 
-                showStatus('walletStatus', 'Wallet Connected!', 'success');
+                showStatus('walletStatus', 'Wallet Connected to Arbitrum Sepolia!', 'success');
 
                 // Load stats
                 await updateStats();
 
                 // Listen for account changes
                 window.ethereum.on('accountsChanged', (accounts) => {
+                    location.reload();
+                });
+
+                // Listen for network changes
+                window.ethereum.on('chainChanged', (chainId) => {
                     location.reload();
                 });
 
