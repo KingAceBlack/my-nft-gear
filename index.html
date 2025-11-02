@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic NFT Gear Viewer</title>
+    <title>Gear NFT Minting</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -15,139 +16,135 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 800px;
-            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         h1 {
             text-align: center;
-            color: #333;
+            color: white;
             margin-bottom: 30px;
-            font-size: 2em;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
-        .viewer-section {
-            display: flex;
+        .connect-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .wallet-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+
+        .wallet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 25px rgba(0,0,0,0.4);
+        }
+
+        .wallet-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 30px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
+            margin-top: 30px;
         }
 
-        .canvas-container {
-            flex: 1;
-            min-width: 300px;
-            background: #f8f9fa;
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .mint-section {
+            text-align: center;
+        }
+
+        .mint-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            font-size: 1.3em;
+            font-weight: 600;
             border-radius: 15px;
-            padding: 20px;
+            cursor: pointer;
+            margin: 20px 0;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .mint-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(17, 153, 142, 0.4);
+        }
+
+        .mint-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .nft-display {
+            min-height: 400px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
-        #nftCanvas {
-            border: 3px solid #667eea;
-            border-radius: 10px;
-            background: white;
-            max-width: 100%;
-            height: auto;
-        }
-
-        .controls {
-            flex: 1;
-            min-width: 300px;
-        }
-
-        .control-group {
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-            font-size: 0.95em;
-        }
-
-        select, button {
+        .nft-preview {
+            position: relative;
             width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1em;
-            transition: all 0.3s ease;
+            max-width: 400px;
+            margin: 20px auto;
         }
 
-        select:focus {
-            outline: none;
-            border-color: #667eea;
+        .nft-canvas {
+            width: 100%;
+            border: 4px solid #667eea;
+            border-radius: 15px;
+            background: #f8f9fa;
         }
 
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .info-box {
-            background: #e8f4f8;
-            padding: 15px;
-            border-radius: 8px;
+        .nft-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
             margin-top: 20px;
-            border-left: 4px solid #667eea;
         }
 
-        .info-box h3 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1.1em;
-        }
-
-        .info-box p {
-            color: #666;
-            line-height: 1.6;
-            font-size: 0.9em;
-        }
-
-        .trait-display {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            border: 2px solid #e0e0e0;
-        }
-
-        .trait-item {
+        .trait {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
         }
 
-        .trait-item:last-child {
+        .trait:last-child {
             border-bottom: none;
         }
 
@@ -160,175 +157,334 @@
             color: #555;
         }
 
-        .download-btn {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            margin-top: 15px;
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 500;
         }
 
-        .random-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .status.loading {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
         }
 
         @media (max-width: 768px) {
-            .viewer-section {
-                flex-direction: column;
+            .main-content {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 Dynamic NFT Gear Combiner</h1>
-        
-        <div class="viewer-section">
-            <div class="canvas-container">
-                <canvas id="nftCanvas" width="400" height="400"></canvas>
-            </div>
-            
-            <div class="controls">
-                <div class="control-group">
-                    <label for="headgearSelect">Select Headgear:</label>
-                    <select id="headgearSelect">
-                        <option value="0">Demon Helmet</option>
-                        <option value="1">Bucket Hat</option>
-                    </select>
-                </div>
+        <h1>⚔️ Gear NFT Minting</h1>
 
-                <div class="control-group">
-                    <label for="bodygearSelect">Select Bodygear:</label>
-                    <select id="bodygearSelect">
-                        <option value="0">Leather Armor</option>
-                        <option value="1">Celestial Armor</option>
-                    </select>
-                </div>
-
-                <button class="random-btn" onclick="randomizeGear()">🎲 Randomize Gear</button>
-                <button onclick="generateCombination()">🎨 Generate Combination</button>
-                <button class="download-btn" onclick="downloadImage()">💾 Download Image</button>
-
-                <div class="trait-display">
-                    <div class="trait-item">
-                        <span class="trait-label">Headgear:</span>
-                        <span class="trait-value" id="currentHead">Demon Helmet</span>
-                    </div>
-                    <div class="trait-item">
-                        <span class="trait-label">Bodygear:</span>
-                        <span class="trait-value" id="currentBody">Leather Armor</span>
-                    </div>
-                </div>
-            </div>
+        <div class="connect-section">
+            <button class="wallet-btn" id="connectBtn" onclick="connectWallet()">
+                🦊 Connect MetaMask
+            </button>
+            <div id="walletStatus" class="status info" style="display: none;"></div>
         </div>
 
-        <div class="info-box">
-            <h3>📝 How to Use for Your NFT Project:</h3>
-            <p>
-                1. Upload your gear images to IPFS<br>
-                2. Host this HTML on a server with the image URLs<br>
-                3. Your NFT metadata should point to: <code>https://yourserver.com/viewer.html?head=X&body=Y</code><br>
-                4. The page will automatically load and display the correct combination<br>
-                5. NFT marketplaces will show the dynamically generated image
-            </p>
+        <div class="main-content">
+            <!-- Minting Section -->
+            <div class="card mint-section">
+                <h2>🎲 Mint Your NFT</h2>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Minted</div>
+                        <div class="stat-value" id="totalSupply">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Your NFTs</div>
+                        <div class="stat-value" id="userBalance">0</div>
+                    </div>
+                </div>
+
+                <button class="mint-btn" id="mintBtn" onclick="mintNFT()" disabled>
+                    🎨 Mint Random Gear NFT
+                </button>
+
+                <div id="mintStatus"></div>
+            </div>
+
+            <!-- NFT Display Section -->
+            <div class="card nft-display">
+                <h2>🖼️ Your Latest NFT</h2>
+                
+                <div class="nft-preview">
+                    <canvas id="nftCanvas" class="nft-canvas" width="400" height="400"></canvas>
+                </div>
+
+                <div class="nft-info" id="nftInfo" style="display: none;">
+                    <div class="trait">
+                        <span class="trait-label">Token ID:</span>
+                        <span class="trait-value" id="tokenId">-</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Headgear:</span>
+                        <span class="trait-value" id="headgear">-</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Bodygear:</span>
+                        <span class="trait-value" id="bodygear">-</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('nftCanvas');
-        const ctx = canvas.getContext('2d');
-
-        // Image URLs - Replace these with your actual IPFS URLs
-        const headgearImages = [
-            'https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/DemonHelmet.png', // Demon Helmet placeholder
-            'https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/BucketHat.png'  // Bucket Hat placeholder
+        // Contract Configuration
+        const CONTRACT_ADDRESS = "0x6F34ae70d52106D6f0Ca39E0C97BD19Ed3671859";
+        
+        // ABI - Only the functions we need
+        const CONTRACT_ABI = [
+            "function mint() external returns (uint256)",
+            "function totalSupply() external view returns (uint256)",
+            "function balanceOf(address owner) external view returns (uint256)",
+            "function getTokenGear(uint256 tokenId) external view returns (string memory headgearName, string memory bodygearName, uint256 mintTime)",
+            "event NFTMinted(uint256 indexed tokenId, address indexed minter, uint8 headgear, uint8 bodygear)"
         ];
 
-        const bodygearImages = [
-            'https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/LeatherArmor.png', // Leather Armor placeholder
-            'https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/CelestialArmor.png'  // Celestial Armor placeholder
+        // Gear images - Update these with your GitHub raw URLs!
+        const HEADGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/DemonHelmet.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/BucketHat.png"
         ];
 
-        const headgearNames = ['Demon Helmet', 'Bucket Hat'];
-        const bodygearNames = ['Leather Armor', 'Celestial Armor'];
+        const BODYGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/LeatherArmor.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/CelestialArmor.png"
+        ];
 
-        let currentHeadIndex = 0;
-        let currentBodyIndex = 0;
+        let provider;
+        let signer;
+        let contract;
+        let userAddress;
 
-        // Check URL parameters for automatic loading
-        function checkURLParams() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const headParam = urlParams.get('head');
-            const bodyParam = urlParams.get('body');
+        // Connect Wallet
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    showStatus('mintStatus', 'Please install MetaMask!', 'error');
+                    return;
+                }
 
-            if (headParam !== null) {
-                currentHeadIndex = parseInt(headParam);
-                document.getElementById('headgearSelect').value = headParam;
-            }
+                // Request account access
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                userAddress = accounts[0];
 
-            if (bodyParam !== null) {
-                currentBodyIndex = parseInt(bodyParam);
-                document.getElementById('bodygearSelect').value = bodyParam;
-            }
+                // Initialize provider and signer
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-            if (headParam !== null || bodyParam !== null) {
-                generateCombination();
+                // Update UI
+                document.getElementById('connectBtn').textContent = `✅ ${userAddress.slice(0,6)}...${userAddress.slice(-4)}`;
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('mintBtn').disabled = false;
+
+                showStatus('walletStatus', 'Wallet Connected!', 'success');
+
+                // Load stats
+                await updateStats();
+
+                // Listen for account changes
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    location.reload();
+                });
+
+            } catch (error) {
+                console.error(error);
+                showStatus('mintStatus', 'Failed to connect wallet: ' + error.message, 'error');
             }
         }
 
-        function generateCombination() {
-            currentHeadIndex = parseInt(document.getElementById('headgearSelect').value);
-            currentBodyIndex = parseInt(document.getElementById('bodygearSelect').value);
+        // Mint NFT
+        async function mintNFT() {
+            try {
+                document.getElementById('mintBtn').disabled = true;
+                showStatus('mintStatus', 'Minting your NFT... Please confirm transaction in MetaMask', 'loading');
 
-            // Update trait display
-            document.getElementById('currentHead').textContent = headgearNames[currentHeadIndex];
-            document.getElementById('currentBody').textContent = bodygearNames[currentBodyIndex];
+                // Call mint function
+                const tx = await contract.mint();
+                
+                showStatus('mintStatus', 'Transaction submitted! Waiting for confirmation...', 'loading');
+                
+                // Wait for transaction to be mined
+                const receipt = await tx.wait();
+
+                // Find the NFTMinted event in the receipt
+                const event = receipt.events.find(e => e.event === 'NFTMinted');
+                const tokenId = event.args.tokenId.toString();
+                const headgear = event.args.headgear;
+                const bodygear = event.args.bodygear;
+
+                showStatus('mintStatus', `🎉 Success! Minted Token #${tokenId}`, 'success');
+
+                // Display the NFT
+                await displayNFT(tokenId, headgear, bodygear);
+
+                // Update stats
+                await updateStats();
+
+                document.getElementById('mintBtn').disabled = false;
+
+            } catch (error) {
+                console.error(error);
+                showStatus('mintStatus', 'Minting failed: ' + (error.reason || error.message), 'error');
+                document.getElementById('mintBtn').disabled = false;
+            }
+        }
+
+        // Display NFT on canvas
+        async function displayNFT(tokenId, headIndex, bodyIndex) {
+            const canvas = document.getElementById('nftCanvas');
+            const ctx = canvas.getContext('2d');
 
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = '#f0f0f0';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Load and draw images
-            const bodyImg = new Image();
-            bodyImg.crossOrigin = "anonymous";
-            bodyImg.onload = function() {
-                // Draw body first (background layer)
+            // Show loading
+            ctx.fillStyle = '#667eea';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading NFT...', canvas.width/2, canvas.height/2);
+
+            try {
+                // Load and draw body image first
+                const bodyImg = await loadImage(BODYGEAR_IMAGES[bodyIndex]);
                 ctx.drawImage(bodyImg, 0, 0, canvas.width, canvas.height);
 
-                // Then draw head on top
-                const headImg = new Image();
-                headImg.crossOrigin = "anonymous";
-                headImg.onload = function() {
-                    ctx.drawImage(headImg, 0, 0, canvas.width, canvas.height);
-                };
-                headImg.src = headgearImages[currentHeadIndex];
-            };
-            bodyImg.src = bodygearImages[currentBodyIndex];
+                // Load and draw head image on top
+                const headImg = await loadImage(HEADGEAR_IMAGES[headIndex]);
+                ctx.drawImage(headImg, 0, 0, canvas.width, canvas.height);
+
+                // Get gear names from contract
+                const gearInfo = await contract.getTokenGear(tokenId);
+
+                // Update NFT info
+                document.getElementById('tokenId').textContent = tokenId;
+                document.getElementById('headgear').textContent = gearInfo.headgearName;
+                document.getElementById('bodygear').textContent = gearInfo.bodygearName;
+                document.getElementById('nftInfo').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading images:', error);
+                ctx.fillStyle = '#d32f2f';
+                ctx.fillText('Error loading images', canvas.width/2, canvas.height/2);
+            }
         }
 
-        function randomizeGear() {
-            currentHeadIndex = Math.floor(Math.random() * 2);
-            currentBodyIndex = Math.floor(Math.random() * 2);
-
-            document.getElementById('headgearSelect').value = currentHeadIndex;
-            document.getElementById('bodygearSelect').value = currentBodyIndex;
-
-            generateCombination();
+        // Helper function to load images
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
+            });
         }
 
-        function downloadImage() {
-            const link = document.createElement('a');
-            link.download = `nft-gear-${currentHeadIndex}-${currentBodyIndex}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+        // Update stats
+        async function updateStats() {
+            try {
+                const totalSupply = await contract.totalSupply();
+                const userBalance = await contract.balanceOf(userAddress);
+
+                document.getElementById('totalSupply').textContent = totalSupply.toString();
+                document.getElementById('userBalance').textContent = userBalance.toString();
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
         }
 
-        // Event listeners
-        document.getElementById('headgearSelect').addEventListener('change', generateCombination);
-        document.getElementById('bodygearSelect').addEventListener('change', generateCombination);
+        // Show status message
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+            element.style.display = 'block';
+        }
 
-        // Initialize
-        checkURLParams();
-        generateCombination();
+        // Initialize canvas with placeholder
+        window.onload = function() {
+            const canvas = document.getElementById('nftCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#667eea';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Connect Wallet to Mint', canvas.width/2, canvas.height/2 - 20);
+            ctx.font = '18px Arial';
+            ctx.fillText('Your NFT will appear here', canvas.width/2, canvas.height/2 + 20);
+        };
     </script>
 </body>
-
 </html>
