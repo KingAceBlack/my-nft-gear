@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic NFT Gear Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .viewer-section {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .canvas-container {
+            flex: 1;
+            min-width: 300px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #nftCanvas {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .controls {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .info-box p {
+            color: #666;
+            line-height: 1.6;
+            font-size: 0.9em;
+        }
+
+        .trait-display {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .trait-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .trait-item:last-child {
+            border-bottom: none;
+        }
+
+        .trait-label {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .trait-value {
+            color: #555;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            margin-top: 15px;
+        }
+
+        .random-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        @media (max-width: 768px) {
+            .viewer-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Dynamic NFT Gear Combiner</h1>
+        
+        <div class="viewer-section">
+            <div class="canvas-container">
+                <canvas id="nftCanvas" width="400" height="400"></canvas>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="headgearSelect">Select Headgear:</label>
+                    <select id="headgearSelect">
+                        <option value="0">Demon Helmet</option>
+                        <option value="1">Bucket Hat</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="bodygearSelect">Select Bodygear:</label>
+                    <select id="bodygearSelect">
+                        <option value="0">Leather Armor</option>
+                        <option value="1">Celestial Armor</option>
+                    </select>
+                </div>
+
+                <button class="random-btn" onclick="randomizeGear()">🎲 Randomize Gear</button>
+                <button onclick="generateCombination()">🎨 Generate Combination</button>
+                <button class="download-btn" onclick="downloadImage()">💾 Download Image</button>
+
+                <div class="trait-display">
+                    <div class="trait-item">
+                        <span class="trait-label">Headgear:</span>
+                        <span class="trait-value" id="currentHead">Demon Helmet</span>
+                    </div>
+                    <div class="trait-item">
+                        <span class="trait-label">Bodygear:</span>
+                        <span class="trait-value" id="currentBody">Leather Armor</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>📝 How to Use for Your NFT Project:</h3>
+            <p>
+                1. Upload your gear images to IPFS<br>
+                2. Host this HTML on a server with the image URLs<br>
+                3. Your NFT metadata should point to: <code>https://yourserver.com/viewer.html?head=X&body=Y</code><br>
+                4. The page will automatically load and display the correct combination<br>
+                5. NFT marketplaces will show the dynamically generated image
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('nftCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Image URLs - Replace these with your actual IPFS URLs
+        const headgearImages = [
+            'https://github.com/KingAceBlack/my-nft-gear/blob/main/DemonHelmet.png', // Demon Helmet placeholder
+            'https://github.com/KingAceBlack/my-nft-gear/blob/main/BucketHat.png'  // Bucket Hat placeholder
+        ];
+
+        const bodygearImages = [
+            'https://github.com/KingAceBlack/my-nft-gear/blob/main/LeatherArmor.png', // Leather Armor placeholder
+            'https://github.com/KingAceBlack/my-nft-gear/blob/main/CelestialArmor.png'  // Celestial Armor placeholder
+        ];
+
+        const headgearNames = ['Demon Helmet', 'Bucket Hat'];
+        const bodygearNames = ['Leather Armor', 'Celestial Armor'];
+
+        let currentHeadIndex = 0;
+        let currentBodyIndex = 0;
+
+        // Check URL parameters for automatic loading
+        function checkURLParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const headParam = urlParams.get('head');
+            const bodyParam = urlParams.get('body');
+
+            if (headParam !== null) {
+                currentHeadIndex = parseInt(headParam);
+                document.getElementById('headgearSelect').value = headParam;
+            }
+
+            if (bodyParam !== null) {
+                currentBodyIndex = parseInt(bodyParam);
+                document.getElementById('bodygearSelect').value = bodyParam;
+            }
+
+            if (headParam !== null || bodyParam !== null) {
+                generateCombination();
+            }
+        }
+
+        function generateCombination() {
+            currentHeadIndex = parseInt(document.getElementById('headgearSelect').value);
+            currentBodyIndex = parseInt(document.getElementById('bodygearSelect').value);
+
+            // Update trait display
+            document.getElementById('currentHead').textContent = headgearNames[currentHeadIndex];
+            document.getElementById('currentBody').textContent = bodygearNames[currentBodyIndex];
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Load and draw images
+            const bodyImg = new Image();
+            bodyImg.crossOrigin = "anonymous";
+            bodyImg.onload = function() {
+                // Draw body first (background layer)
+                ctx.drawImage(bodyImg, 0, 0, canvas.width, canvas.height);
+
+                // Then draw head on top
+                const headImg = new Image();
+                headImg.crossOrigin = "anonymous";
+                headImg.onload = function() {
+                    ctx.drawImage(headImg, 0, 0, canvas.width, canvas.height);
+                };
+                headImg.src = headgearImages[currentHeadIndex];
+            };
+            bodyImg.src = bodygearImages[currentBodyIndex];
+        }
+
+        function randomizeGear() {
+            currentHeadIndex = Math.floor(Math.random() * 2);
+            currentBodyIndex = Math.floor(Math.random() * 2);
+
+            document.getElementById('headgearSelect').value = currentHeadIndex;
+            document.getElementById('bodygearSelect').value = currentBodyIndex;
+
+            generateCombination();
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = `nft-gear-${currentHeadIndex}-${currentBodyIndex}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Event listeners
+        document.getElementById('headgearSelect').addEventListener('change', generateCombination);
+        document.getElementById('bodygearSelect').addEventListener('change', generateCombination);
+
+        // Initialize
+        checkURLParams();
+        generateCombination();
+    </script>
+</body>
+</html>
