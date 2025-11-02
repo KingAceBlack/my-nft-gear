@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gear NFT Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .viewer-container {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        canvas {
+            width: 100%;
+            border-radius: 15px;
+            background: #0f3460;
+            display: block;
+        }
+
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0f3460;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .trait {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .trait:last-child {
+            border-bottom: none;
+        }
+
+        .trait-label {
+            color: #64b5f6;
+            font-weight: 600;
+        }
+
+        .trait-value {
+            color: #e0e0e0;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            padding: 40px;
+            font-size: 1.2em;
+        }
+
+        .error {
+            text-align: center;
+            color: #ff6b6b;
+            padding: 40px;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="viewer-container">
+        <canvas id="nftCanvas" width="500" height="500"></canvas>
+        <div class="info" id="info">
+            <div class="loading" id="loading">Loading NFT...</div>
+        </div>
+    </div>
+
+    <script>
+        // Gear images - UPDATE THESE WITH YOUR ACTUAL WORKING URLs!
+        // Test each URL in your browser first to make sure they load
+        const HEADGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/DemonHelmet.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/BucketHat.png"
+        ];
+
+        const BODYGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/LeatherArmor.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/CelestialArmor.png"
+        ];
+
+        // Alternative: Try master branch if main doesn't work
+        // "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/master/LeatherArmor.png"
+
+        const HEADGEAR_NAMES = ["Demon Helmet", "Bucket Hat"];
+        const BODYGEAR_NAMES = ["Leather Armor", "Celestial Armor"];
+
+        // Get URL parameters
+        function getURLParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                head: parseInt(params.get('head') || '0'),
+                body: parseInt(params.get('body') || '0')
+            };
+        }
+
+        // Load image helper
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error(`Failed to load: ${url}`));
+                img.src = url;
+            });
+        }
+
+        // Display NFT
+        async function displayNFT() {
+            const canvas = document.getElementById('nftCanvas');
+            const ctx = canvas.getContext('2d');
+            const info = document.getElementById('info');
+
+            try {
+                // Get gear indices from URL
+                const { head, body } = getURLParams();
+
+                // Validate indices
+                if (head < 0 || head >= HEADGEAR_IMAGES.length || 
+                    body < 0 || body >= BODYGEAR_IMAGES.length) {
+                    throw new Error('Invalid gear indices');
+                }
+
+                // Clear canvas
+                ctx.fillStyle = '#0f3460';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Show loading
+                ctx.fillStyle = '#64b5f6';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Loading...', canvas.width/2, canvas.height/2);
+
+                // Load images
+                console.log('Loading body:', BODYGEAR_IMAGES[body]);
+                const bodyImg = await loadImage(BODYGEAR_IMAGES[body]);
+                
+                console.log('Loading head:', HEADGEAR_IMAGES[head]);
+                const headImg = await loadImage(HEADGEAR_IMAGES[head]);
+
+                // Clear and draw body first
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(bodyImg, 0, 0, canvas.width, canvas.height);
+
+                // Draw head on top
+                ctx.drawImage(headImg, 0, 0, canvas.width, canvas.height);
+
+                // Update info
+                info.innerHTML = `
+                    <div class="trait">
+                        <span class="trait-label">Headgear:</span>
+                        <span class="trait-value">${HEADGEAR_NAMES[head]}</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Bodygear:</span>
+                        <span class="trait-value">${BODYGEAR_NAMES[body]}</span>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error displaying NFT:', error);
+                
+                // Show error
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ff6b6b';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Error Loading NFT', canvas.width/2, canvas.height/2 - 20);
+                ctx.font = '16px Arial';
+                ctx.fillText(error.message, canvas.width/2, canvas.height/2 + 20);
+
+                info.innerHTML = `<div class="error">${error.message}</div>`;
+            }
+        }
+
+        // Initialize on page load
+        window.onload = displayNFT;
+    </script>
+</body>
+</html>
