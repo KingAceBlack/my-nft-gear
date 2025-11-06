@@ -88,11 +88,23 @@
     </div>
 
     <script>
-        // Gear images - UPDATE THESE WITH YOUR ACTUAL WORKING URLs!
-        // Test each URL in your browser first to make sure they load
+        // All 15 Headgear Images - UPDATE WITH YOUR ACTUAL URLs
         const HEADGEAR_IMAGES = [
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/DemonHelmet.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/BucketHat.png"
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/AncientHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/OrnateHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/GreatHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/FullHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/Helm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/DemonCrown_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/DragonCrown_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/WarCap_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/LeatherCap_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/Cap_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/Crown_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/DivineHood_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/SilkHood_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/LinenHood_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/Hood_Simple.png"
         ];
 
         const BODYGEAR_IMAGES = [
@@ -100,10 +112,24 @@
             "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/CelestialArmor.png"
         ];
 
-        // Alternative: Try master branch if main doesn't work
-        // "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/master/LeatherArmor.png"
+        const HEADGEAR_NAMES = [
+            "Ancient Helm",
+            "Ornate Helm",
+            "Great Helm",
+            "Full Helm",
+            "Helm",
+            "Demon Crown",
+            "Dragon's Crown",
+            "War Cap",
+            "Leather Cap",
+            "Cap",
+            "Crown",
+            "Divine Hood",
+            "Silk Hood",
+            "Linen Hood",
+            "Hood"
+        ];
 
-        const HEADGEAR_NAMES = ["Demon Helmet", "Bucket Hat"];
         const BODYGEAR_NAMES = ["Leather Armor", "Celestial Armor"];
 
         // Get URL parameters
@@ -159,11 +185,11 @@
                 console.log('Loading head:', HEADGEAR_IMAGES[head]);
                 const headImg = await loadImage(HEADGEAR_IMAGES[head]);
 
-                // Clear and draw body first
+                // Clear and draw body first (layer 1)
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(bodyImg, 0, 0, canvas.width, canvas.height);
 
-                // Draw head on top
+                // Draw head on top (layer 2)
                 ctx.drawImage(headImg, 0, 0, canvas.width, canvas.height);
 
                 // Update info
