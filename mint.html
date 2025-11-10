@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mint Gear NFT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #64b5f6;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #e0e0e0;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .wallet-status {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #e0e0e0;
+        }
+
+        .wallet-address {
+            color: #64b5f6;
+            font-family: monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+
+        .mint-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .mint-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .mint-button:disabled {
+            background: #444;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .connect-button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+            width: 100%;
+        }
+
+        .connect-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .status-message {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            color: #e0e0e0;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success {
+            color: #4caf50;
+        }
+
+        .error {
+            color: #ff6b6b;
+        }
+
+        .loading {
+            color: #64b5f6;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid #64b5f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .nft-display {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .nft-display.show {
+            display: block;
+        }
+
+        .nft-frame {
+            background: #0f3460;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .nft-image {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .nft-info {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .trait {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .trait:last-child {
+            border-bottom: none;
+        }
+
+        .trait-label {
+            color: #64b5f6;
+            font-weight: 600;
+        }
+
+        .trait-value {
+            color: #e0e0e0;
+        }
+
+        .view-on-opensea {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 15px;
+        }
+
+        .view-on-opensea:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4);
+        }
+
+        .network-warning {
+            background: #ff6b6b;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
+    <!-- Include ethers.js FIRST -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ Gear NFT</h1>
+        <p class="subtitle">Mint Your Legendary Equipment</p>
+
+        <div id="walletSection">
+            <button class="connect-button" id="connectBtn" onclick="connectWallet()">
+                Connect Wallet
+            </button>
+        </div>
+
+        <div id="mintSection" style="display: none;">
+            <div class="wallet-status">
+                <div>Connected: <span class="wallet-address" id="walletAddress"></span></div>
+            </div>
+
+            <div id="networkWarning" class="network-warning" style="display: none;">
+                ⚠️ Please switch to the correct network
+            </div>
+
+            <button class="mint-button" id="mintBtn" onclick="mintNFT()">
+                Mint NFT
+            </button>
+
+            <div class="status-message" id="statusMessage">
+                Ready to mint your Gear NFT
+            </div>
+        </div>
+
+        <div class="nft-display" id="nftDisplay">
+            <div class="nft-frame">
+                <h2 style="color: #64b5f6; margin-bottom: 15px;" id="nftName">Gear #0</h2>
+                <iframe id="nftViewer" class="nft-image" height="400" frameborder="0"></iframe>
+                <div class="nft-info" id="nftInfo"></div>
+                <a id="openseaLink" class="view-on-opensea" href="#" target="_blank">
+                    View on OpenSea
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONTRACT_ADDRESS = "0x08AfB85e85cde4057ac548E4F3A975DA39D48391";
+        const CONTRACT_ABI = [
+            "function mint() external returns (uint256)",
+            "function tokenURI(uint256 tokenId) external view returns (string memory)",
+            "event Minted(uint256 indexed id)"
+        ];
+
+        let provider;
+        let signer;
+        let contract;
+        let userAddress;
+
+        // Gear names mapping
+        const GEAR_NAMES = {
+            headgear: ["Ancient Helm", "Ornate Helm", "Great Helm", "Full Helm", "Helm", "Demon Crown", "Dragon's Crown", "War Cap", "Leather Cap", "Cap", "Crown", "Divine Hood", "Silk Hood", "Linen Hood", "Hood"],
+            chestgear: ["Divine Robe", "Silk Robe", "Linen Robe", "Robe", "Shirt", "Demon Husk", "Dragonskin Armor", "Studded Leather Armor", "Hard Leather Armor", "Leather Armor", "Holy Chestplate", "Ornate Chestplate", "Plate Mail", "Chain Mail", "Ring Mail"],
+            handgear: ["Holy Gauntlets", "Ornate Gauntlets", "Gauntlets", "Chain Gloves", "Heavy Gloves", "Demon's Hands", "Dragonskin Gloves", "Studded Leather Gloves", "Hard Leather Gloves", "Leather Gloves", "Divine Gloves", "Silk Gloves", "Wool Gloves", "Linen Gloves", "Gloves"],
+            waistgear: ["Ornate Belt", "War Belt", "Plated Belt", "Mesh Belt", "Heavy Belt", "Demonhide Belt", "Dragonskin Belt", "Studded Leather Belt", "Hard Leather Belt", "Leather Belt", "Brightsilk Sash", "Silk Sash", "Wool Sash", "Linen Sash", "Sash"],
+            footgear: ["Holy Greaves", "Ornate Greaves", "Greaves", "Chain Boots", "Heavy Boots", "Demonhide Boots", "Dragonskin Boots", "Studded Leather Boots", "Hard Leather Boots", "Leather Boots", "Divine Slippers", "Silk Slippers", "Wool Shoes", "Linen Shoes", "Shoes"],
+            ring: ["Gold Ring", "Silver Ring", "Bronze Ring", "Platinum Ring", "Titanium Ring"],
+            neck: ["Necklace", "Amulet", "Pendant"],
+            order: ["Power", "Giants", "Titans", "Skill", "Perfection", "Brilliance", "Enlightenment", "Protection", "Anger", "Rage", "Fury", "Vitriol", "Fox", "Detection", "Reflection", "Twins"],
+            weapon: ["Warhammer", "Quarterstaff", "Maul", "Mace", "Club", "Katana", "Falchion", "Scimitar", "Long Sword", "Short Sword", "Ghost Wand", "Grave Wand", "Bone Wand", "Wand", "Grimoire", "Chronicle", "Tome", "Book"]
+        };
+
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    alert('Please install MetaMask to use this dApp!');
+                    return;
+                }
+
+                // Request account access
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+
+                userAddress = accounts[0];
+
+                // Initialize ethers
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                // Update UI
+                document.getElementById('walletSection').style.display = 'none';
+                document.getElementById('mintSection').style.display = 'block';
+                document.getElementById('walletAddress').textContent = 
+                    userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+
+                // Check network
+                checkNetwork();
+
+                // Listen for account changes
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    if (accounts.length === 0) {
+                        location.reload();
+                    } else {
+                        userAddress = accounts[0];
+                        document.getElementById('walletAddress').textContent = 
+                            userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+                showStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        async function checkNetwork() {
+            try {
+                const network = await provider.getNetwork();
+                // Add your network check here if needed
+                // For example, check if it's on the correct chain
+                console.log('Connected to network:', network.name, 'Chain ID:', network.chainId);
+            } catch (error) {
+                console.error('Error checking network:', error);
+            }
+        }
+
+        async function mintNFT() {
+            const mintBtn = document.getElementById('mintBtn');
+            const statusDiv = document.getElementById('statusMessage');
+
+            try {
+                mintBtn.disabled = true;
+                showStatus('<div class="spinner"></div> Preparing transaction...', 'loading');
+
+                // Call mint function
+                const tx = await contract.mint();
+                
+                showStatus('<div class="spinner"></div> Minting in progress... Waiting for confirmation', 'loading');
+
+                // Wait for transaction to be mined
+                const receipt = await tx.wait();
+
+                // Find the Minted event to get the token ID
+                const mintedEvent = receipt.events.find(e => e.event === 'Minted');
+                const tokenId = mintedEvent.args.id.toString();
+
+                showStatus('✅ Successfully minted Gear #' + tokenId + '!', 'success');
+
+                // Display the NFT
+                await displayNFT(tokenId);
+
+            } catch (error) {
+                console.error('Minting error:', error);
+                let errorMsg = 'Minting failed';
+                
+                if (error.code === 4001) {
+                    errorMsg = 'Transaction rejected by user';
+                } else if (error.message) {
+                    errorMsg = error.message;
+                }
+                
+                showStatus('❌ ' + errorMsg, 'error');
+                mintBtn.disabled = false;
+            }
+        }
+
+        async function displayNFT(tokenId) {
+            try {
+                // Get token URI
+                const tokenURI = await contract.tokenURI(tokenId);
+                
+                // Decode base64 metadata
+                const base64Data = tokenURI.replace('data:application/json;base64,', '');
+                const jsonString = atob(base64Data);
+                const metadata = JSON.parse(jsonString);
+
+                // Extract image URL
+                const imageUrl = metadata.image;
+                
+                // Display NFT name
+                document.getElementById('nftName').textContent = metadata.name;
+
+                // Set iframe src
+                document.getElementById('nftViewer').src = imageUrl;
+
+                // Display attributes
+                let attributesHTML = '';
+                metadata.attributes.forEach(attr => {
+                    attributesHTML += `
+                        <div class="trait">
+                            <span class="trait-label">${attr.trait_type}:</span>
+                            <span class="trait-value">${attr.value}</span>
+                        </div>
+                    `;
+                });
+                document.getElementById('nftInfo').innerHTML = attributesHTML;
+
+                // Set OpenSea link (update with your network)
+                // For mainnet: https://opensea.io/assets/ethereum/${CONTRACT_ADDRESS}/${tokenId}
+                // For testnet: https://testnets.opensea.io/assets/sepolia/${CONTRACT_ADDRESS}/${tokenId}
+                const network = await provider.getNetwork();
+                let openseaUrl;
+                if (network.chainId === 1) {
+                    openseaUrl = `https://opensea.io/assets/ethereum/${CONTRACT_ADDRESS}/${tokenId}`;
+                } else if (network.chainId === 11155111) {
+                    openseaUrl = `https://testnets.opensea.io/assets/sepolia/${CONTRACT_ADDRESS}/${tokenId}`;
+                } else {
+                    openseaUrl = `https://testnets.opensea.io/assets/${CONTRACT_ADDRESS}/${tokenId}`;
+                }
+                document.getElementById('openseaLink').href = openseaUrl;
+
+                // Show NFT display
+                document.getElementById('nftDisplay').classList.add('show');
+
+            } catch (error) {
+                console.error('Error displaying NFT:', error);
+                showStatus('NFT minted but failed to load display', 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = message;
+            statusDiv.className = 'status-message ' + type;
+        }
+
+        // Check if wallet is already connected on page load
+        window.addEventListener('load', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ 
+                        method: 'eth_accounts' 
+                    });
+                    
+                    if (accounts.length > 0) {
+                        await connectWallet();
+                    }
+                } catch (error) {
+                    console.error('Error checking wallet connection:', error);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
