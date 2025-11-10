@@ -18,30 +18,50 @@
             align-items: center;
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            overflow: hidden;
         }
 
         .viewer-container {
             background: #16213e;
             border-radius: 20px;
-            padding: 20px;
+            padding: 30px;
             box-shadow: 0 10px 50px rgba(0,0,0,0.5);
-            max-width: 600px;
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
             width: 100%;
+            max-height: 90vh;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         canvas {
             width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            height: auto;
             border-radius: 15px;
             background: #0f3460;
             display: block;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
 
         .info {
-            margin-top: 20px;
-            padding: 15px;
+            width: 300px;
+            padding: 20px;
             background: #0f3460;
             border-radius: 10px;
             color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .trait {
@@ -77,39 +97,180 @@
             padding: 40px;
             font-size: 1.1em;
         }
+
+        @media (max-width: 968px) {
+            .viewer-container {
+                flex-direction: column;
+            }
+            
+            .info {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="viewer-container">
-        <canvas id="nftCanvas" width="500" height="500"></canvas>
+        <div class="canvas-wrapper">
+            <canvas id="nftCanvas" width="2160" height="2160"></canvas>
+        </div>
         <div class="info" id="info">
             <div class="loading" id="loading">Loading NFT...</div>
         </div>
     </div>
 
     <script>
-        // All 15 Headgear Images - UPDATE WITH YOUR ACTUAL URLs
+        // All 15 Headgear Images
         const HEADGEAR_IMAGES = [
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/AncientHelm_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/OrnateHelm_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/GreatHelm_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/FullHelm_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/Helm_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/DemonCrown_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/DragonCrown_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/WarCap_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/LeatherCap_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/Cap_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/Crown_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/DivineHood_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/SilkHood_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/LinenHood_Simple.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/headgear/Hood_Simple.png"
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/AncientHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/OrnateHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/GreatHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/FullHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/Helm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/DemonCrown_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/DragonCrown_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/WarCap_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/LeatherCap_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/Cap_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/Crown_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/DivineHood_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/SilkHood_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/LinenHood_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/Hood_Simple.png"
         ];
 
-        const BODYGEAR_IMAGES = [
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/LeatherArmor.png",
-            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/CelestialArmor.png"
+        // All 15 Chestgear Images
+        const CHESTGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/DivineRobe_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/SilkRobe_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/LinenRobe_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/Robe_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/Shirt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/DemonHusk_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/DragonskinArmor_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/StuddedLeatherArmor_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/HardLeatherArmor_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/LeatherArmor_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/HolyChestplate_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/OrnateChestplate_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/PlateMail_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/ChainMail_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/RingMail_Simple.png"
+        ];
+
+        // All 15 Handgear Images
+        const HANDGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/HolyGauntlets_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/OrnateGauntlets_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/Gauntlets_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/ChainGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/HeavyGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/DemonsHands_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/DragonskinGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/StuddedLeatherGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/HardLeatherGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/LeatherGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/DivineGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/SilkGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/WoolGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/LinenGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/Gloves_Simple.png"
+        ];
+
+        // All 15 Waistgear Images
+        const WAISTGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/OrnateBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/WarBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/PlatedBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/MeshBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/HeavyBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/DemonhideBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/DragonskinBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/StuddedLeatherBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/HardLeatherBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/LeatherBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/BrightsilkSash_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/SilkSash_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/WoolSash_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/LinenSash_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/Sash_Simple.png"
+        ];
+
+        // All 15 Footgear Images
+        const FOOTGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/HolyGreaves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/OrnateGreaves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/Greaves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/ChainBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/HeavyBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/DemonhideBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/DragonskinBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/StuddedLeatherBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/HardLeatherBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/LeatherBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/DivineSlippers_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/SilkSlippers_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/WoolShoes_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/LinenShoes_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/Shoes_Simple.png"
+        ];
+
+        // All 5 Ring Images
+        const RINGGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/GoldRing_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/SilverRing_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/BronzeRing_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/PlatinumRing_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/TitaniumRing_Simple.png"
+        ];
+
+        // All 3 Neckgear Images
+        const NECKGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/neck-gear/Necklace_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/neck-gear/Amulet_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/neck-gear/Pendant_Simple.png"
+        ];
+
+        // All 17 Order Images
+        const ORDERGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Power.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Giants.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Titans.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Skill.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Perfection.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Brilliance.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Enlightenment.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Protection.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Anger.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Rage.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Fury.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Vitriol.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Fox.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Detection.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Reflection.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Twins.png"
+        ];
+
+        // All 18 Weapon Images
+        const WEAPON_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Warhammer_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Quarterstaff_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Maul_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Mace_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Club_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Katana_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Falchion_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Scimitar_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/LongSword_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/ShortSword_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/GhostWand_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/GraveWand_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/BoneWand_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Wand_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Grimoire_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Chronicle_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Tome_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Book_Simple.png"
         ];
 
         const HEADGEAR_NAMES = [
@@ -130,15 +291,188 @@
             "Hood"
         ];
 
-        const BODYGEAR_NAMES = ["Leather Armor", "Celestial Armor"];
+        const CHESTGEAR_NAMES = [
+            "Divine Robe",
+            "Silk Robe",
+            "Linen Robe",
+            "Robe",
+            "Shirt",
+            "Demon Husk",
+            "Dragonskin Armor",
+            "Studded Leather Armor",
+            "Hard Leather Armor",
+            "Leather Armor",
+            "Holy Chestplate",
+            "Ornate Chestplate",
+            "Plate Mail",
+            "Chain Mail",
+            "Ring Mail"
+        ];
+
+        const HANDGEAR_NAMES = [
+            "Holy Gauntlets",
+            "Ornate Gauntlets",
+            "Gauntlets",
+            "Chain Gloves",
+            "Heavy Gloves",
+            "Demon's Hands",
+            "Dragonskin Gloves",
+            "Studded Leather Gloves",
+            "Hard Leather Gloves",
+            "Leather Gloves",
+            "Divine Gloves",
+            "Silk Gloves",
+            "Wool Gloves",
+            "Linen Gloves",
+            "Gloves"
+        ];
+
+        const WAISTGEAR_NAMES = [
+            "Ornate Belt",
+            "War Belt",
+            "Plated Belt",
+            "Mesh Belt",
+            "Heavy Belt",
+            "Demonhide Belt",
+            "Dragonskin Belt",
+            "Studded Leather Belt",
+            "Hard Leather Belt",
+            "Leather Belt",
+            "Brightsilk Sash",
+            "Silk Sash",
+            "Wool Sash",
+            "Linen Sash",
+            "Sash"
+        ];
+
+        const FOOTGEAR_NAMES = [
+            "Holy Greaves",
+            "Ornate Greaves",
+            "Greaves",
+            "Chain Boots",
+            "Heavy Boots",
+            "Demonhide Boots",
+            "Dragonskin Boots",
+            "Studded Leather Boots",
+            "Hard Leather Boots",
+            "Leather Boots",
+            "Divine Slippers",
+            "Silk Slippers",
+            "Wool Shoes",
+            "Linen Shoes",
+            "Shoes"
+        ];
+
+        const RINGGEAR_NAMES = [
+            "Gold Ring",
+            "Silver Ring",
+            "Bronze Ring",
+            "Platinum Ring",
+            "Titanium Ring"
+        ];
+
+        const NECKGEAR_NAMES = [
+            "Necklace",
+            "Amulet",
+            "Pendant"
+        ];
+
+        const ORDERGEAR_NAMES = [
+            "Power",
+            "Giants",
+            "Titans",
+            "Skill",
+            "Perfection",
+            "Brilliance",
+            "Enlightenment",
+            "Protection",
+            "Anger",
+            "Rage",
+            "Fury",
+            "Vitriol",
+            "Fox",
+            "Detection",
+            "Reflection",
+            "Twins"
+        ];
+
+        const WEAPON_NAMES = [
+            "Warhammer",
+            "Quarterstaff",
+            "Maul",
+            "Mace",
+            "Club",
+            "Katana",
+            "Falchion",
+            "Scimitar",
+            "Long Sword",
+            "Short Sword",
+            "Ghost Wand",
+            "Grave Wand",
+            "Bone Wand",
+            "Wand",
+            "Grimoire",
+            "Chronicle",
+            "Tome",
+            "Book"
+        ];
 
         // Get URL parameters
         function getURLParams() {
             const params = new URLSearchParams(window.location.search);
+            const metadata = params.get('metadata');
+            
+            if (metadata) {
+                return parseMetadata(metadata);
+            }
+            
             return {
                 head: parseInt(params.get('head') || '0'),
-                body: parseInt(params.get('body') || '0')
+                chest: parseInt(params.get('chest') || '0'),
+                hand: parseInt(params.get('hand') || '0'),
+                waist: parseInt(params.get('waist') || '0'),
+                foot: parseInt(params.get('foot') || '0'),
+                ring: parseInt(params.get('ring') || '0'),
+                neck: parseInt(params.get('neck') || '0'),
+                order: parseInt(params.get('order') || '0'),
+                weapon: parseInt(params.get('weapon') || '0')
             };
+        }
+
+        // Parse base64 metadata
+        function parseMetadata(metadataString) {
+            try {
+                // Remove the data URL prefix if present
+                const base64String = metadataString.replace('data:application/json;base64,', '');
+                
+                // Decode base64
+                const jsonString = atob(base64String);
+                
+                // Parse JSON
+                const metadata = JSON.parse(jsonString);
+                
+                // Extract parameters from image URL
+                const imageUrl = metadata.image;
+                const queryString = imageUrl.split('?')[1];
+                const params = new URLSearchParams(queryString);
+                
+                return {
+                    head: parseInt(params.get('head') || '0'),
+                    chest: parseInt(params.get('chest') || '0'),
+                    hand: parseInt(params.get('hand') || '0'),
+                    waist: parseInt(params.get('waist') || '0'),
+                    foot: parseInt(params.get('foot') || '0'),
+                    ring: parseInt(params.get('ring') || '0'),
+                    neck: parseInt(params.get('neck') || '0'),
+                    order: parseInt(params.get('order') || '0'),
+                    weapon: parseInt(params.get('weapon') || '0'),
+                    nftName: metadata.name || 'Unnamed Gear',
+                    attributes: metadata.attributes || []
+                };
+            } catch (error) {
+                console.error('Error parsing metadata:', error);
+                throw new Error('Invalid metadata format');
+            }
         }
 
         // Load image helper
@@ -159,12 +493,20 @@
             const info = document.getElementById('info');
 
             try {
-                // Get gear indices from URL
-                const { head, body } = getURLParams();
+                // Get gear indices from URL or metadata
+                const gearParams = getURLParams();
+                const { head, chest, hand, waist, foot, ring, neck, order, weapon, nftName, attributes } = gearParams;
 
                 // Validate indices
                 if (head < 0 || head >= HEADGEAR_IMAGES.length || 
-                    body < 0 || body >= BODYGEAR_IMAGES.length) {
+                    chest < 0 || chest >= CHESTGEAR_IMAGES.length ||
+                    hand < 0 || hand >= HANDGEAR_IMAGES.length ||
+                    waist < 0 || waist >= WAISTGEAR_IMAGES.length ||
+                    foot < 0 || foot >= FOOTGEAR_IMAGES.length ||
+                    ring < 0 || ring >= RINGGEAR_IMAGES.length ||
+                    neck < 0 || neck >= NECKGEAR_IMAGES.length ||
+                    order < 0 || order >= ORDERGEAR_IMAGES.length ||
+                    weapon < 0 || weapon >= WEAPON_IMAGES.length) {
                     throw new Error('Invalid gear indices');
                 }
 
@@ -179,30 +521,115 @@
                 ctx.fillText('Loading...', canvas.width/2, canvas.height/2);
 
                 // Load images
-                console.log('Loading body:', BODYGEAR_IMAGES[body]);
-                const bodyImg = await loadImage(BODYGEAR_IMAGES[body]);
+                console.log('Loading chest:', CHESTGEAR_IMAGES[chest]);
+                const chestImg = await loadImage(CHESTGEAR_IMAGES[chest]);
+                
+                console.log('Loading waist:', WAISTGEAR_IMAGES[waist]);
+                const waistImg = await loadImage(WAISTGEAR_IMAGES[waist]);
+                
+                console.log('Loading foot:', FOOTGEAR_IMAGES[foot]);
+                const footImg = await loadImage(FOOTGEAR_IMAGES[foot]);
+                
+                console.log('Loading neck:', NECKGEAR_IMAGES[neck]);
+                const neckImg = await loadImage(NECKGEAR_IMAGES[neck]);
+                
+                console.log('Loading hand:', HANDGEAR_IMAGES[hand]);
+                const handImg = await loadImage(HANDGEAR_IMAGES[hand]);
+                
+                console.log('Loading ring:', RINGGEAR_IMAGES[ring]);
+                const ringImg = await loadImage(RINGGEAR_IMAGES[ring]);
+                
+                console.log('Loading order:', ORDERGEAR_IMAGES[order]);
+                const orderImg = await loadImage(ORDERGEAR_IMAGES[order]);
                 
                 console.log('Loading head:', HEADGEAR_IMAGES[head]);
                 const headImg = await loadImage(HEADGEAR_IMAGES[head]);
+                
+                console.log('Loading weapon:', WEAPON_IMAGES[weapon]);
+                const weaponImg = await loadImage(WEAPON_IMAGES[weapon]);
 
-                // Clear and draw body first (layer 1)
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(bodyImg, 0, 0, canvas.width, canvas.height);
+                // Clear canvas and draw pitch black background
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Draw head on top (layer 2)
+                // Draw in layers (bottom to top)
+                // 1. Chestgear (bottom layer)
+                ctx.drawImage(chestImg, 0, 0, canvas.width, canvas.height);
+
+                // 2. Waistgear (on top of chestgear)
+                ctx.drawImage(waistImg, 0, 0, canvas.width, canvas.height);
+
+                // 3. Footgear (on top of waistgear)
+                ctx.drawImage(footImg, 0, 0, canvas.width, canvas.height);
+
+                // 4. Neckgear (on top of footgear)
+                ctx.drawImage(neckImg, 0, 0, canvas.width, canvas.height);
+
+                // 5. Handgear (middle layer)
+                ctx.drawImage(handImg, 0, 0, canvas.width, canvas.height);
+
+                // 6. Ringgear (on top of handgear)
+                ctx.drawImage(ringImg, 0, 0, canvas.width, canvas.height);
+
+                // 7. Ordergear (special effects layer)
+                ctx.drawImage(orderImg, 0, 0, canvas.width, canvas.height);
+
+                // 8. Headgear (top layer)
                 ctx.drawImage(headImg, 0, 0, canvas.width, canvas.height);
 
+                // 9. Weapon (very top layer)
+                ctx.drawImage(weaponImg, 0, 0, canvas.width, canvas.height);
+
                 // Update info
-                info.innerHTML = `
+                let infoHTML = '';
+                
+                if (nftName) {
+                    infoHTML += `<div class="trait" style="border-bottom: 2px solid #64b5f6; margin-bottom: 10px;">
+                        <span class="trait-label" style="font-size: 1.1em;">NFT Name:</span>
+                        <span class="trait-value" style="font-size: 1.1em;">${nftName}</span>
+                    </div>`;
+                }
+
+                infoHTML += `
                     <div class="trait">
                         <span class="trait-label">Headgear:</span>
                         <span class="trait-value">${HEADGEAR_NAMES[head]}</span>
                     </div>
                     <div class="trait">
-                        <span class="trait-label">Bodygear:</span>
-                        <span class="trait-value">${BODYGEAR_NAMES[body]}</span>
+                        <span class="trait-label">Chestgear:</span>
+                        <span class="trait-value">${CHESTGEAR_NAMES[chest]}</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Handgear:</span>
+                        <span class="trait-value">${HANDGEAR_NAMES[hand]}</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Waistgear:</span>
+                        <span class="trait-value">${WAISTGEAR_NAMES[waist]}</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Footgear:</span>
+                        <span class="trait-value">${FOOTGEAR_NAMES[foot]}</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Ring:</span>
+                        <span class="trait-value">${RINGGEAR_NAMES[ring]}</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Neckgear:</span>
+                        <span class="trait-value">${NECKGEAR_NAMES[neck]}</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Order:</span>
+                        <span class="trait-value">${ORDERGEAR_NAMES[order]}</span>
+                    </div>
+                    <div class="trait">
+                        <span class="trait-label">Weapon:</span>
+                        <span class="trait-value">${WEAPON_NAMES[weapon]}</span>
                     </div>
                 `;
+
+                info.innerHTML = infoHTML;
 
             } catch (error) {
                 console.error('Error displaying NFT:', error);
