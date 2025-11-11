@@ -575,36 +575,31 @@
             ctx.fillText('Loading NFT...', canvas.width/2, canvas.height/2);
 
             try {
-                // PARALLEL LOADING: Load ALL images simultaneously
-                const imagePromises = [
-                    loadImage(CHESTGEAR_IMAGES[chest]),
-                    loadImage(WAISTGEAR_IMAGES[waist]),
-                    loadImage(FOOTGEAR_IMAGES[foot]),
-                    loadImage(NECKGEAR_IMAGES[neck]),
-                    loadImage(HANDGEAR_IMAGES[hand]),
-                    loadImage(RINGGEAR_IMAGES[ring]),
-                    loadImage(ORDERGEAR_IMAGES[order]),
-                    loadImage(HEADGEAR_IMAGES[head]),
-                    loadImage(WEAPON_IMAGES[weapon])
-                ];
-                
-                // Wait for all images to load in parallel
-                const images = await Promise.all(imagePromises);
+                // Load all images in the correct order
+                const chestImg = await loadImage(CHESTGEAR_IMAGES[chest]);
+                const waistImg = await loadImage(WAISTGEAR_IMAGES[waist]);
+                const footImg = await loadImage(FOOTGEAR_IMAGES[foot]);
+                const neckImg = await loadImage(NECKGEAR_IMAGES[neck]);
+                const handImg = await loadImage(HANDGEAR_IMAGES[hand]);
+                const ringImg = await loadImage(RINGGEAR_IMAGES[ring]);
+                const orderImg = await loadImage(ORDERGEAR_IMAGES[order]);
+                const headImg = await loadImage(HEADGEAR_IMAGES[head]);
+                const weaponImg = await loadImage(WEAPON_IMAGES[weapon]);
 
                 // Clear canvas again
                 ctx.fillStyle = '#000000';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Draw layers from bottom to top using the loaded images
-                ctx.drawImage(images[0], 0, 0, canvas.width, canvas.height); // chest
-                ctx.drawImage(images[1], 0, 0, canvas.width, canvas.height); // waist
-                ctx.drawImage(images[2], 0, 0, canvas.width, canvas.height); // foot
-                ctx.drawImage(images[3], 0, 0, canvas.width, canvas.height); // neck
-                ctx.drawImage(images[4], 0, 0, canvas.width, canvas.height); // hand
-                ctx.drawImage(images[5], 0, 0, canvas.width, canvas.height); // ring
-                ctx.drawImage(images[6], 0, 0, canvas.width, canvas.height); // order
-                ctx.drawImage(images[7], 0, 0, canvas.width, canvas.height); // head
-                ctx.drawImage(images[8], 0, 0, canvas.width, canvas.height); // weapon
+                // Draw layers from bottom to top
+                ctx.drawImage(chestImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(waistImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(footImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(neckImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(handImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(ringImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(orderImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(headImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(weaponImg, 0, 0, canvas.width, canvas.height);
 
             } catch (error) {
                 console.error('Error rendering NFT:', error);
@@ -639,4 +634,4 @@
         });
     </script>
 </body>
-</html>
+</html> 
