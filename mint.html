@@ -26,7 +26,7 @@
             border-radius: 20px;
             padding: 40px;
             box-shadow: 0 10px 50px rgba(0,0,0,0.5);
-            max-width: 500px;
+            max-width: 900px;
             width: 100%;
             text-align: center;
         }
@@ -156,13 +156,17 @@
             background: #0f3460;
             border-radius: 15px;
             padding: 20px;
-            margin-bottom: 20px;
         }
 
-        .nft-image {
+        canvas {
             width: 100%;
+            max-width: 500px;
+            height: auto;
             border-radius: 10px;
             margin-bottom: 15px;
+            background: #000000;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
 
         .nft-info {
@@ -170,26 +174,28 @@
             border-radius: 10px;
             padding: 15px;
             margin-top: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
 
         .trait {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .trait:last-child {
-            border-bottom: none;
+            padding: 8px;
+            background: #0f3460;
+            border-radius: 5px;
         }
 
         .trait-label {
             color: #64b5f6;
             font-weight: 600;
+            font-size: 0.9em;
         }
 
         .trait-value {
             color: #e0e0e0;
+            font-size: 0.9em;
         }
 
         .view-on-opensea {
@@ -212,34 +218,10 @@
             box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4);
         }
 
-        .network-warning {
-            background: #ff6b6b;
-            color: white;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-        }
-
-        .gas-options {
-            background: #0f3460;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 15px;
-            text-align: left;
-        }
-
-        .gas-option {
-            margin: 10px 0;
-        }
-
-        .gas-input {
-            background: #16213e;
-            border: 1px solid #64b5f6;
-            border-radius: 5px;
-            color: white;
-            padding: 8px;
-            width: 100px;
-            margin-left: 10px;
+        @media (max-width: 768px) {
+            .nft-info {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
     <!-- Include ethers.js FIRST -->
@@ -259,31 +241,10 @@
         <div id="mintSection" style="display: none;">
             <div class="wallet-status">
                 <div>Connected: <span class="wallet-address" id="walletAddress"></span></div>
-                <div>Network: <span id="networkName">Unknown</span></div>
-                <div>Balance: <span id="walletBalance">0 ETH</span></div>
-            </div>
-
-            <div id="networkWarning" class="network-warning" style="display: none;">
-                ⚠️ Please switch to Base Sepolia Testnet
-            </div>
-
-            <div class="gas-options" id="gasOptions" style="display: none;">
-                <h3 style="color: #64b5f6; margin-bottom: 10px;">Gas Settings (Advanced)</h3>
-                <div class="gas-option">
-                    <label>Gas Limit:</label>
-                    <input type="number" id="gasLimit" class="gas-input" value="300000" min="21000" max="1000000">
-                </div>
-                <div class="gas-option">
-                    <label>Gas Price (Gwei):</label>
-                    <input type="number" id="gasPrice" class="gas-input" value="1" min="0.1" max="100" step="0.1">
-                </div>
-                <button onclick="mintWithCustomGas()" class="mint-button" style="margin-top: 10px;">
-                    Mint with Custom Gas
-                </button>
             </div>
 
             <button class="mint-button" id="mintBtn" onclick="mintNFT()">
-                Mint NFT (Auto Gas)
+                Mint NFT
             </button>
 
             <div class="status-message" id="statusMessage">
@@ -294,7 +255,7 @@
         <div class="nft-display" id="nftDisplay">
             <div class="nft-frame">
                 <h2 style="color: #64b5f6; margin-bottom: 15px;" id="nftName">Gear #0</h2>
-                <iframe id="nftViewer" class="nft-image" height="400" frameborder="0"></iframe>
+                <canvas id="nftCanvas" width="2160" height="2160"></canvas>
                 <div class="nft-info" id="nftInfo"></div>
                 <a id="openseaLink" class="view-on-opensea" href="#" target="_blank">
                     View on OpenSea
@@ -308,42 +269,168 @@
         const CONTRACT_ABI = [
             "function mint() external returns (uint256)",
             "function tokenURI(uint256 tokenId) external view returns (string memory)",
-            "function owner() external view returns (address)",
-            "function balanceOf(address owner) external view returns (uint256)",
-            "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
             "event Minted(uint256 indexed id)"
         ];
-
-        // Target network (Base Sepolia)
-        const TARGET_NETWORK = {
-            chainId: '0x14a34', // 84532 in hex
-            chainName: 'Base Sepolia',
-            rpcUrls: ['https://sepolia.base.org'],
-            blockExplorerUrls: ['https://sepolia.basescan.org'],
-            nativeCurrency: {
-                name: 'ETH',
-                symbol: 'ETH',
-                decimals: 18
-            }
-        };
 
         let provider;
         let signer;
         let contract;
         let userAddress;
 
-        // Gear names mapping
-        const GEAR_NAMES = {
-            headgear: ["Ancient Helm", "Ornate Helm", "Great Helm", "Full Helm", "Helm", "Demon Crown", "Dragon's Crown", "War Cap", "Leather Cap", "Cap", "Crown", "Divine Hood", "Silk Hood", "Linen Hood", "Hood"],
-            chestgear: ["Divine Robe", "Silk Robe", "Linen Robe", "Robe", "Shirt", "Demon Husk", "Dragonskin Armor", "Studded Leather Armor", "Hard Leather Armor", "Leather Armor", "Holy Chestplate", "Ornate Chestplate", "Plate Mail", "Chain Mail", "Ring Mail"],
-            handgear: ["Holy Gauntlets", "Ornate Gauntlets", "Gauntlets", "Chain Gloves", "Heavy Gloves", "Demon's Hands", "Dragonskin Gloves", "Studded Leather Gloves", "Hard Leather Gloves", "Leather Gloves", "Divine Gloves", "Silk Gloves", "Wool Gloves", "Linen Gloves", "Gloves"],
-            waistgear: ["Ornate Belt", "War Belt", "Plated Belt", "Mesh Belt", "Heavy Belt", "Demonhide Belt", "Dragonskin Belt", "Studded Leather Belt", "Hard Leather Belt", "Leather Belt", "Brightsilk Sash", "Silk Sash", "Wool Sash", "Linen Sash", "Sash"],
-            footgear: ["Holy Greaves", "Ornate Greaves", "Greaves", "Chain Boots", "Heavy Boots", "Demonhide Boots", "Dragonskin Boots", "Studded Leather Boots", "Hard Leather Boots", "Leather Boots", "Divine Slippers", "Silk Slippers", "Wool Shoes", "Linen Shoes", "Shoes"],
-            ring: ["Gold Ring", "Silver Ring", "Bronze Ring", "Platinum Ring", "Titanium Ring"],
-            neck: ["Necklace", "Amulet", "Pendant"],
-            order: ["Power", "Giants", "Titans", "Skill", "Perfection", "Brilliance", "Enlightenment", "Protection", "Anger", "Rage", "Fury", "Vitriol", "Fox", "Detection", "Reflection", "Twins"],
-            weapon: ["Warhammer", "Quarterstaff", "Maul", "Mace", "Club", "Katana", "Falchion", "Scimitar", "Long Sword", "Short Sword", "Ghost Wand", "Grave Wand", "Bone Wand", "Wand", "Grimoire", "Chronicle", "Tome", "Book"]
-        };
+        // Image URLs for all gear
+        const HEADGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/AncientHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/OrnateHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/GreatHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/FullHelm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/Helm_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/DemonCrown_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/DragonCrown_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/WarCap_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/LeatherCap_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/Cap_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/Crown_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/DivineHood_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/SilkHood_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/LinenHood_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/head-gear/Hood_Simple.png"
+        ];
+
+        const CHESTGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/DivineRobe_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/SilkRobe_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/LinenRobe_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/Robe_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/Shirt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/DemonHusk_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/DragonskinArmor_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/StuddedLeatherArmor_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/HardLeatherArmor_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/LeatherArmor_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/HolyChestplate_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/OrnateChestplate_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/PlateMail_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/ChainMail_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/chest-gear/RingMail_Simple.png"
+        ];
+
+        const HANDGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/HolyGauntlets_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/OrnateGauntlets_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/Gauntlets_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/ChainGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/HeavyGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/DemonsHands_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/DragonskinGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/StuddedLeatherGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/HardLeatherGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/LeatherGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/DivineGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/SilkGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/WoolGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/LinenGloves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/hand-gear/Gloves_Simple.png"
+        ];
+
+        const WAISTGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/OrnateBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/WarBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/PlatedBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/MeshBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/HeavyBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/DemonhideBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/DragonskinBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/StuddedLeatherBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/HardLeatherBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/LeatherBelt_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/BrightsilkSash_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/SilkSash_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/WoolSash_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/LinenSash_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/waist-gear/Sash_Simple.png"
+        ];
+
+        const FOOTGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/HolyGreaves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/OrnateGreaves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/Greaves_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/ChainBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/HeavyBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/DemonhideBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/DragonskinBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/StuddedLeatherBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/HardLeatherBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/LeatherBoots_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/DivineSlippers_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/SilkSlippers_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/WoolShoes_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/LinenShoes_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/foot-gear/Shoes_Simple.png"
+        ];
+
+        const RINGGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/GoldRing_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/SilverRing_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/BronzeRing_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/PlatinumRing_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/ring-gear/TitaniumRing_Simple.png"
+        ];
+
+        const NECKGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/neck-gear/Necklace_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/neck-gear/Amulet_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/neck-gear/Pendant_Simple.png"
+        ];
+
+        const ORDERGEAR_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Power.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Giants.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Titans.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Skill.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Perfection.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Brilliance.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Enlightenment.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Protection.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Anger.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Rage.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Fury.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Vitriol.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Fox.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Detection.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Reflection.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/order-gear/Twins.png"
+        ];
+
+        const WEAPON_IMAGES = [
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Warhammer_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Quarterstaff_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Maul_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Mace_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Club_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Katana_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Falchion_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Scimitar_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/LongSword_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/ShortSword_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/GhostWand_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/GraveWand_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/BoneWand_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Wand_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Grimoire_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Chronicle_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Tome_Simple.png",
+            "https://raw.githubusercontent.com/KingAceBlack/my-nft-gear/main/weapon/Book_Simple.png"
+        ];
+
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error(`Failed to load: ${url}`));
+                img.src = url;
+            });
+        }
 
         async function connectWallet() {
             try {
@@ -352,29 +439,20 @@
                     return;
                 }
 
-                // Request account access
                 const accounts = await window.ethereum.request({ 
                     method: 'eth_requestAccounts' 
                 });
 
                 userAddress = accounts[0];
-
-                // Initialize ethers
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
                 contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-                // Update UI
                 document.getElementById('walletSection').style.display = 'none';
                 document.getElementById('mintSection').style.display = 'block';
                 document.getElementById('walletAddress').textContent = 
                     userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
 
-                // Check network and update info
-                await checkNetwork();
-                await updateWalletInfo();
-
-                // Listen for account changes
                 window.ethereum.on('accountsChanged', (accounts) => {
                     if (accounts.length === 0) {
                         location.reload();
@@ -382,13 +460,7 @@
                         userAddress = accounts[0];
                         document.getElementById('walletAddress').textContent = 
                             userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
-                        updateWalletInfo();
                     }
-                });
-
-                // Listen for network changes
-                window.ethereum.on('chainChanged', (chainId) => {
-                    location.reload();
                 });
 
             } catch (error) {
@@ -397,169 +469,26 @@
             }
         }
 
-        async function checkNetwork() {
-            try {
-                const network = await provider.getNetwork();
-                const networkName = getNetworkName(network.chainId);
-                document.getElementById('networkName').textContent = networkName;
-                
-                // Show warning if not on target network
-                if (network.chainId !== parseInt(TARGET_NETWORK.chainId, 16)) {
-                    document.getElementById('networkWarning').style.display = 'block';
-                    document.getElementById('gasOptions').style.display = 'block';
-                    showStatus('Please switch to Base Sepolia network', 'error');
-                } else {
-                    document.getElementById('networkWarning').style.display = 'none';
-                    showStatus('Ready to mint your Gear NFT', 'success');
-                }
-            } catch (error) {
-                console.error('Error checking network:', error);
-            }
-        }
-
-        async function updateWalletInfo() {
-            try {
-                const balance = await provider.getBalance(userAddress);
-                const balanceInEth = ethers.utils.formatEther(balance);
-                document.getElementById('walletBalance').textContent = parseFloat(balanceInEth).toFixed(4) + ' ETH';
-            } catch (error) {
-                console.error('Error updating wallet info:', error);
-            }
-        }
-
-        function getNetworkName(chainId) {
-            const networks = {
-                1: 'Ethereum Mainnet',
-                11155111: 'Sepolia',
-                421614: 'Arbitrum Sepolia',
-                42161: 'Arbitrum One',
-                84532: 'Base Sepolia',
-                8453: 'Base Mainnet',
-                137: 'Polygon',
-                80001: 'Polygon Mumbai'
-            };
-            return networks[chainId] || `Unknown (${chainId})`;
-        }
-
-        async function switchToBaseSepolia() {
-            try {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: TARGET_NETWORK.chainId }],
-                });
-            } catch (switchError) {
-                // This error code indicates that the chain has not been added to MetaMask
-                if (switchError.code === 4902) {
-                    try {
-                        await window.ethereum.request({
-                            method: 'wallet_addEthereumChain',
-                            params: [TARGET_NETWORK],
-                        });
-                    } catch (addError) {
-                        console.error('Error adding network:', addError);
-                        showStatus('Failed to add Base Sepolia network', 'error');
-                    }
-                } else {
-                    console.error('Error switching network:', switchError);
-                    showStatus('Failed to switch network', 'error');
-                }
-            }
-        }
-
         async function mintNFT() {
             const mintBtn = document.getElementById('mintBtn');
-            const statusDiv = document.getElementById('statusMessage');
 
             try {
                 mintBtn.disabled = true;
                 showStatus('<div class="spinner"></div> Preparing transaction...', 'loading');
 
-                // First check if we're on the right network
-                const network = await provider.getNetwork();
-                if (network.chainId !== parseInt(TARGET_NETWORK.chainId, 16)) {
-                    showStatus('Please switch to Base Sepolia first', 'error');
-                    mintBtn.disabled = false;
-                    return;
-                }
-
-                // Try to estimate gas first
-                try {
-                    const gasEstimate = await contract.estimateGas.mint();
-                    console.log('Gas estimate:', gasEstimate.toString());
-                } catch (estimateError) {
-                    console.warn('Gas estimation failed:', estimateError);
-                    showStatus('Gas estimation failed. Try custom gas settings.', 'error');
-                    document.getElementById('gasOptions').style.display = 'block';
-                    mintBtn.disabled = false;
-                    return;
-                }
-
-                // Call mint function with auto gas
                 const tx = await contract.mint();
-                
                 showStatus('<div class="spinner"></div> Minting in progress... Waiting for confirmation', 'loading');
 
-                // Wait for transaction to be mined
                 const receipt = await tx.wait();
-
-                // Find the Minted event to get the token ID
                 const mintedEvent = receipt.events.find(e => e.event === 'Minted');
-                const tokenId = mintedEvent ? mintedEvent.args.id.toString() : 'Unknown';
+                const tokenId = mintedEvent.args.id.toString();
 
                 showStatus('✅ Successfully minted Gear #' + tokenId + '!', 'success');
-
-                // Display the NFT
                 await displayNFT(tokenId);
 
             } catch (error) {
                 console.error('Minting error:', error);
                 let errorMsg = 'Minting failed';
-                
-                if (error.code === 4001) {
-                    errorMsg = 'Transaction rejected by user';
-                } else if (error.message && error.message.includes('insufficient funds')) {
-                    errorMsg = 'Insufficient funds for gas';
-                } else if (error.message) {
-                    errorMsg = error.message;
-                }
-                
-                showStatus('❌ ' + errorMsg, 'error');
-                mintBtn.disabled = false;
-                
-                // Show gas options if gas estimation fails
-                if (error.message && error.message.includes('UNPREDICTABLE_GAS_LIMIT')) {
-                    document.getElementById('gasOptions').style.display = 'block';
-                }
-            }
-        }
-
-        async function mintWithCustomGas() {
-            const mintBtn = document.getElementById('mintBtn');
-            const gasLimit = document.getElementById('gasLimit').value;
-            const gasPrice = document.getElementById('gasPrice').value;
-
-            try {
-                mintBtn.disabled = true;
-                showStatus('<div class="spinner"></div> Preparing transaction with custom gas...', 'loading');
-
-                const gasPriceWei = ethers.utils.parseUnits(gasPrice, 'gwei');
-                const tx = await contract.mint({
-                    gasLimit: gasLimit,
-                    gasPrice: gasPriceWei
-                });
-                
-                showStatus('<div class="spinner"></div> Minting in progress... Waiting for confirmation', 'loading');
-
-                const receipt = await tx.wait();
-                const mintedEvent = receipt.events.find(e => e.event === 'Minted');
-                const tokenId = mintedEvent ? mintedEvent.args.id.toString() : 'Unknown';
-
-                showStatus('✅ Successfully minted Gear #' + tokenId + '!', 'success');
-                await displayNFT(tokenId);
-
-            } catch (error) {
-                console.error('Custom gas minting error:', error);
-                let errorMsg = 'Minting failed with custom gas';
                 
                 if (error.code === 4001) {
                     errorMsg = 'Transaction rejected by user';
@@ -574,23 +503,30 @@
 
         async function displayNFT(tokenId) {
             try {
-                // Get token URI
                 const tokenURI = await contract.tokenURI(tokenId);
-                
-                // Decode base64 metadata
                 const base64Data = tokenURI.replace('data:application/json;base64,', '');
                 const jsonString = atob(base64Data);
                 const metadata = JSON.parse(jsonString);
 
-                // Extract image URL
-                const imageUrl = metadata.image;
-                
-                // Display NFT name
                 document.getElementById('nftName').textContent = metadata.name;
 
-                // Set iframe src to our viewer with the image URL parameters
-                const viewerUrl = `viewer.html${imageUrl.split('?')[1]}`;
-                document.getElementById('nftViewer').src = viewerUrl;
+                // Extract gear indices from image URL
+                const imageUrl = metadata.image;
+                const queryString = imageUrl.split('?')[1];
+                const params = new URLSearchParams(queryString);
+                
+                const head = parseInt(params.get('head'));
+                const chest = parseInt(params.get('chest'));
+                const hand = parseInt(params.get('hand'));
+                const waist = parseInt(params.get('waist'));
+                const foot = parseInt(params.get('foot'));
+                const ring = parseInt(params.get('ring'));
+                const neck = parseInt(params.get('neck'));
+                const order = parseInt(params.get('order'));
+                const weapon = parseInt(params.get('weapon'));
+
+                // Render NFT on canvas
+                await renderNFT(head, chest, hand, waist, foot, ring, neck, order, weapon);
 
                 // Display attributes
                 let attributesHTML = '';
@@ -604,19 +540,18 @@
                 });
                 document.getElementById('nftInfo').innerHTML = attributesHTML;
 
-                // Set OpenSea link for Base Sepolia
+                // Set OpenSea link
                 const network = await provider.getNetwork();
                 let openseaUrl;
                 if (network.chainId === 1) {
                     openseaUrl = `https://opensea.io/assets/ethereum/${CONTRACT_ADDRESS}/${tokenId}`;
-                } else if (network.chainId === 84532) {
-                    openseaUrl = `https://testnets.opensea.io/assets/base-sepolia/${CONTRACT_ADDRESS}/${tokenId}`;
+                } else if (network.chainId === 11155111) {
+                    openseaUrl = `https://testnets.opensea.io/assets/sepolia/${CONTRACT_ADDRESS}/${tokenId}`;
                 } else {
                     openseaUrl = `https://testnets.opensea.io/assets/${CONTRACT_ADDRESS}/${tokenId}`;
                 }
                 document.getElementById('openseaLink').href = openseaUrl;
 
-                // Show NFT display
                 document.getElementById('nftDisplay').classList.add('show');
 
             } catch (error) {
@@ -625,15 +560,61 @@
             }
         }
 
+        async function renderNFT(head, chest, hand, waist, foot, ring, neck, order, weapon) {
+            const canvas = document.getElementById('nftCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas with black background
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Show loading
+            ctx.fillStyle = '#64b5f6';
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading NFT...', canvas.width/2, canvas.height/2);
+
+            try {
+                // Load all images in the correct order
+                const chestImg = await loadImage(CHESTGEAR_IMAGES[chest]);
+                const waistImg = await loadImage(WAISTGEAR_IMAGES[waist]);
+                const footImg = await loadImage(FOOTGEAR_IMAGES[foot]);
+                const neckImg = await loadImage(NECKGEAR_IMAGES[neck]);
+                const handImg = await loadImage(HANDGEAR_IMAGES[hand]);
+                const ringImg = await loadImage(RINGGEAR_IMAGES[ring]);
+                const orderImg = await loadImage(ORDERGEAR_IMAGES[order]);
+                const headImg = await loadImage(HEADGEAR_IMAGES[head]);
+                const weaponImg = await loadImage(WEAPON_IMAGES[weapon]);
+
+                // Clear canvas again
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw layers from bottom to top
+                ctx.drawImage(chestImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(waistImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(footImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(neckImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(handImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(ringImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(orderImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(headImg, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(weaponImg, 0, 0, canvas.width, canvas.height);
+
+            } catch (error) {
+                console.error('Error rendering NFT:', error);
+                ctx.fillStyle = '#ff6b6b';
+                ctx.font = 'bold 36px Arial';
+                ctx.fillText('Error Loading Images', canvas.width/2, canvas.height/2);
+                throw error;
+            }
+        }
+
         function showStatus(message, type) {
             const statusDiv = document.getElementById('statusMessage');
             statusDiv.innerHTML = message;
             statusDiv.className = 'status-message ' + type;
         }
-
-        // Add network switch button to warning
-        document.getElementById('networkWarning').innerHTML += 
-            '<br><button onclick="switchToBaseSepolia()" style="margin-top: 10px; padding: 8px 16px; background: #64b5f6; color: white; border: none; border-radius: 5px; cursor: pointer;">Switch to Base Sepolia</button>';
 
         // Check if wallet is already connected on page load
         window.addEventListener('load', async () => {
